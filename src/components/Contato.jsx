@@ -1,19 +1,50 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Send, CheckCircle2 } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import emailjs from '@emailjs/browser'
+import { Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+
+const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID
+const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
 
 export default function Contato() {
+  const formRef = useRef(null)
   const [form, setForm] = useState({ nome: '', email: '', mensagem: '' })
-  const [enviado, setEnviado] = useState(false)
+  const [status, setStatus] = useState('idle') // idle | loading | success | error
+  const [errorMsg, setErrorMsg] = useState('')
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
-    setEnviado(true)
-    setTimeout(() => {
-      setEnviado(false)
+
+    if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
+      setStatus('error')
+      setErrorMsg(
+        'EmailJS não configurado. Verifique o arquivo .env e reinicie o servidor.'
+      )
+      return
+    }
+
+    setStatus('loading')
+    setErrorMsg('')
+
+    try {
+      await emailjs.sendForm(SERVICE_ID, TEMPLATE_ID, formRef.current, {
+        publicKey: PUBLIC_KEY,
+      })
+      setStatus('success')
       setForm({ nome: '', email: '', mensagem: '' })
-    }, 3000)
+      setTimeout(() => setStatus('idle'), 4000)
+    } catch (err) {
+      console.error('EmailJS error:', err)
+      setStatus('error')
+      setErrorMsg(
+        err?.text || 'Falha ao enviar. Tente novamente em instantes.'
+      )
+      setTimeout(() => setStatus('idle'), 5000)
+    }
   }
+
+  const isLoading = status === 'loading'
 
   return (
     <section id="contato" className="py-28 px-6 relative">
@@ -37,6 +68,7 @@ export default function Contato() {
         </motion.div>
 
         <motion.form
+          ref={formRef}
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -49,10 +81,12 @@ export default function Contato() {
               <label className="block text-sm text-gray-300 mb-2">Nome</label>
               <input
                 type="text"
+                name="nome"
                 required
+                disabled={isLoading}
                 value={form.nome}
                 onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400/60 transition-colors"
+                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400/60 transition-colors disabled:opacity-60"
                 placeholder="Seu nome"
               />
             </div>
@@ -60,10 +94,12 @@ export default function Contato() {
               <label className="block text-sm text-gray-300 mb-2">E-mail</label>
               <input
                 type="email"
+                name="email"
                 required
+                disabled={isLoading}
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400/60 transition-colors"
+                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400/60 transition-colors disabled:opacity-60"
                 placeholder="voce@email.com"
               />
             </div>
@@ -72,30 +108,64 @@ export default function Contato() {
             <label className="block text-sm text-gray-300 mb-2">Mensagem</label>
             <textarea
               rows="5"
+              name="mensagem"
               required
+              disabled={isLoading}
               value={form.mensagem}
               onChange={(e) => setForm({ ...form, mensagem: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400/60 transition-colors resize-none"
+              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400/60 transition-colors resize-none disabled:opacity-60"
               placeholder="Conte sobre o seu projeto..."
             />
           </div>
+
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={!isLoading ? { scale: 1.02 } : {}}
+            whileTap={!isLoading ? { scale: 0.98 } : {}}
             type="submit"
-            disabled={enviado}
-            className="w-full py-3.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/60 transition-shadow disabled:opacity-70"
+            disabled={isLoading || status === 'success'}
+            className="w-full py-3.5 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/60 transition-shadow disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {enviado ? (
+            {status === 'loading' && (
+              <>
+                <Loader2 size={18} className="animate-spin" /> Enviando...
+              </>
+            )}
+            {status === 'success' && (
               <>
                 <CheckCircle2 size={18} /> Mensagem enviada!
               </>
-            ) : (
+            )}
+            {(status === 'idle' || status === 'error') && (
               <>
                 <Send size={18} /> Enviar mensagem
               </>
             )}
           </motion.button>
+
+          <AnimatePresence>
+            {status === 'error' && errorMsg && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-start gap-2 text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg p-3"
+              >
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <span>{errorMsg}</span>
+              </motion.div>
+            )}
+            {status === 'success' && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-start gap-2 text-sm text-green-300 bg-green-500/10 border border-green-500/30 rounded-lg p-3"
+              >
+                <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+                <span>Recebi sua mensagem — responderei em breve!</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.form>
       </div>
 
