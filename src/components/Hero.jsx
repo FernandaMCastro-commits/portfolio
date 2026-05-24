@@ -81,7 +81,7 @@ export default function Hero() {
           className="flex items-center justify-center gap-5"
         >
           {[
-            { Icon: GithubIcon, href: 'https://github.com' },
+            { Icon: GithubIcon, href: 'https://github.com/FernandaMCastro-commits' },
             { Icon: LinkedinIcon, href: 'https://linkedin.com' },
             { Icon: Mail, href: 'mailto:contato@email.com' },
           ].map(({ Icon, href }, i) => (

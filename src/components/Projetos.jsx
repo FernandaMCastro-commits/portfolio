@@ -92,9 +92,14 @@ export default function Projetos() {
                   <button className="flex items-center gap-2 text-sm text-purple-300 hover:text-purple-200 transition-colors">
                     <ExternalLink size={15} /> Demo
                   </button>
-                  <button className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors">
+                  <a
+                    href="https://github.com/FernandaMCastro-commits"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
+                  >
                     <GithubIcon size={15} /> Código
-                  </button>
+                  </a>
                 </div>
               </div>
             </motion.article>

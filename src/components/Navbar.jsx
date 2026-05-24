@@ -36,7 +36,7 @@ export default function Navbar() {
           className="flex items-center gap-2 text-white font-bold text-xl"
         >
           <Code2 className="text-purple-400" size={26} />
-          <span className="text-gradient">dev.portfolio</span>
+          <span className="text-gradient">fernanda.dev</span>
         </motion.a>
 
         <ul className="hidden md:flex items-center gap-8">
